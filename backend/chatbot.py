@@ -12,6 +12,7 @@ class IIITRChatbot:
         self.knowledge_base_text = knowledge_base_text
         self.doc_url = doc_url
         self.model = genai.GenerativeModel("gemini-3-flash-preview")
+        self.chat_history = [] # To store conversation history
 
     def fetch_doc_content(self):
         if not self.doc_url:
@@ -36,10 +37,21 @@ class IIITRChatbot:
         if doc_content:
             full_kb += "\n\nSource: Google Doc (Real-time update)\nContent: " + doc_content
 
+        # Format chat history for the prompt
+        history_context = "\n".join([f"{item['role']}: {item['content']}" for item in self.chat_history[-6:]])
+
         prompt = f"""
         You are an official chatbot for IIITR (Indian Institute of Information Technology, Raichur).
         Answer the following question based on the knowledge base provided below.
-        If the information is not present, say you don't know but suggest visiting the official website.
+        
+        Rules for response length:
+        1. If this is the FIRST time the user is asking about this specific topic or person in this conversation, provide a VERY SHORT and relevant answer (max 2 sentences).
+        2. If the user is asking a follow-up question, or asking for more details about something already mentioned in the conversation history, provide a DETAILED and IN-DEPTH answer.
+        
+        If the information is not present in the knowledge base, say you don't know but suggest visiting the official website.
+        
+        Conversation History:
+        {history_context}
         
         Question: {question}
         
@@ -49,7 +61,13 @@ class IIITRChatbot:
         
         try:
             response = self.model.generate_content(prompt)
-            return response.text
+            answer = response.text
+            
+            # Update history
+            self.chat_history.append({"role": "user", "content": question})
+            self.chat_history.append({"role": "bot", "content": answer})
+            
+            return answer
         except Exception as e:
             return f"Error generating answer: {e}"
 
