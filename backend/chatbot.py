@@ -1,6 +1,8 @@
 import os
 import google.generativeai as genai
 import requests
+import chromadb
+from chromadb.config import Settings
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,6 +15,46 @@ class IIITRChatbot:
         self.doc_url = doc_url
         self.model = genai.GenerativeModel("gemini-3-flash-preview")
         self.chat_history = [] # To store conversation history
+        
+        # Initialize ChromaDB
+        self.chroma_client = chromadb.PersistentClient(path="./chroma_db")
+        self.collection = self.chroma_client.get_or_create_collection(name="iiitr_knowledge")
+
+    def add_to_vector_db(self, text, metadata):
+        """Adds text chunks to the vector database."""
+        # Simple chunking by paragraph/newline for better retrieval
+        chunks = [c.strip() for c in text.split("\n\n") if len(c.strip()) > 50]
+        if not chunks: chunks = [text]
+        
+        for i, chunk in enumerate(chunks):
+            # Generate embedding using Google AI
+            embedding_result = genai.embed_content(
+                model="models/gemini-embedding-001",
+                content=chunk,
+                task_type="retrieval_document"
+            )
+            embedding = embedding_result['embedding']
+            
+            self.collection.add(
+                embeddings=[embedding],
+                documents=[chunk],
+                metadatas=[metadata],
+                ids=[f"{metadata['source']}_{i}_{os.urandom(4).hex()}"]
+            )
+
+    def query_vector_db(self, query, n_results=3):
+        """Queries the vector database for relevant context."""
+        query_embedding = genai.embed_content(
+            model="models/gemini-embedding-001",
+            content=query,
+            task_type="retrieval_query"
+        )['embedding']
+        
+        results = self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=n_results
+        )
+        return "\n".join(results['documents'][0]) if results['documents'] else ""
 
     def fetch_doc_content(self):
         if not self.doc_url:
@@ -31,11 +73,18 @@ class IIITRChatbot:
             return ""
 
     def answer_question(self, question):
-        # Refresh Google Doc knowledge on every query for real-time updates
+        # 1. Get real-time content from Google Doc
         doc_content = self.fetch_doc_content()
+        
+        # 2. Get relevant content from Vector DB (Faculty uploads + Scraped data)
+        vector_context = self.query_vector_db(question)
+        
+        # 3. Combine with static knowledge base
         full_kb = self.knowledge_base_text
         if doc_content:
             full_kb += "\n\nSource: Google Doc (Real-time update)\nContent: " + doc_content
+        if vector_context:
+            full_kb += "\n\nRelevant Context from Faculty/Knowledge Base:\n" + vector_context
 
         # Format chat history for the prompt
         history_context = "\n".join([f"{item['role']}: {item['content']}" for item in self.chat_history[-6:]])

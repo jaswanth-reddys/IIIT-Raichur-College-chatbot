@@ -3,4 +3,9 @@ uvicorn
 google-generativeai  
 python-dotenv  
 beautifulsoup4  
-requests 
+requests
+pypdf
+pandas
+openpyxl
+chromadb
+python-multipart

@@ -9,6 +9,8 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -45,8 +47,37 @@ export default function Home() {
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/upload-faculty-data`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setMessages((prev) => [...prev, { role: "bot", content: `✅ ${data.message}` }]);
+      } else {
+        setMessages((prev) => [...prev, { role: "bot", content: `❌ Upload failed: ${data.detail}` }]);
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      setMessages((prev) => [...prev, { role: "bot", content: "❌ Error connecting to server for upload." }]);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-black relative">
+    <div className="min-h-screen bg-transparent relative">
       {/* Floating Chat Bubble */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -65,29 +96,56 @@ export default function Home() {
 
       {/* Chat Window */}
       <div
-        className={`fixed bottom-24 right-6 w-[90vw] md:w-[400px] h-[600px] max-h-[80vh] bg-zinc-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right z-50 border border-zinc-800 ${
+        className={`fixed bottom-24 right-6 w-[90vw] md:w-[400px] h-[600px] max-h-[80vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right z-50 border border-blue-100 ${
           isOpen ? "scale-100 opacity-100" : "scale-0 opacity-0 pointer-events-none"
         }`}
       >
         {/* Header */}
-        <header className="bg-zinc-800 p-4 flex items-center gap-3 border-b border-zinc-700">
-          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-            IR
-          </div>
-          <div>
-            <h2 className="text-white font-semibold">IIITR Bot</h2>
-            <div className="flex items-center gap-1">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              <span className="text-zinc-400 text-xs">Online</span>
+        <header className="bg-white p-4 flex items-center justify-between border-b border-blue-50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+              IR
             </div>
+            <div>
+              <h2 className="text-zinc-800 font-semibold">IIITR Bot</h2>
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <span className="text-zinc-500 text-xs">Online</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Faculty Upload Button */}
+          <div className="flex items-center">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              className="hidden"
+              accept=".pdf,.json,.xlsx,.xls"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              title="Faculty: Upload Data (PDF, JSON, XLSX)"
+              className="p-2 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {isUploading ? (
+                <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              )}
+            </button>
           </div>
         </header>
 
         {/* Chat Content */}
-        <main className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-900 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+        <main className="flex-1 overflow-y-auto p-4 space-y-4 bg-white scrollbar-thin scrollbar-thumb-blue-100 scrollbar-track-transparent">
           {messages.length === 0 && (
             <div className="text-center py-10">
-              <p className="text-zinc-500 text-sm">Hello! How can I help you today?</p>
+              <p className="text-zinc-400 text-sm font-medium">Hello! How can I help you today?</p>
             </div>
           )}
           {messages.map((msg, index) => (
@@ -98,12 +156,12 @@ export default function Home() {
               <div
                 className={`max-w-[85%] p-3 rounded-2xl ${
                   msg.role === "user"
-                    ? "bg-blue-600 text-white rounded-tr-none"
-                    : "bg-zinc-800 text-zinc-200 rounded-tl-none border border-zinc-700"
+                    ? "bg-blue-600 text-white rounded-tr-none shadow-md"
+                    : "bg-blue-50 text-zinc-800 rounded-tl-none border border-blue-100"
                 }`}
               >
                 {msg.role === "bot" ? (
-                  <div className="prose prose-invert prose-sm max-w-none">
+                  <div className="prose prose-sm max-w-none prose-zinc">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                   </div>
                 ) : (
@@ -114,7 +172,7 @@ export default function Home() {
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-zinc-800 p-3 rounded-2xl rounded-tl-none border border-zinc-700 text-zinc-400 text-sm flex gap-1">
+              <div className="bg-blue-50 p-3 rounded-2xl rounded-tl-none border border-blue-100 text-blue-400 text-sm flex gap-1">
                 <span className="animate-bounce">.</span>
                 <span className="animate-bounce delay-100">.</span>
                 <span className="animate-bounce delay-200">.</span>
@@ -125,11 +183,11 @@ export default function Home() {
         </main>
 
         {/* Footer Input */}
-        <footer className="p-4 bg-zinc-800 border-t border-zinc-700">
+        <footer className="p-4 bg-white border-t border-blue-50">
           <div className="relative flex items-center">
             <input
               type="text"
-              className="flex-1 p-3 pr-12 bg-zinc-900 border border-zinc-700 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-zinc-500"
+              className="flex-1 p-3 pr-12 bg-white border border-blue-100 rounded-2xl text-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-zinc-400 shadow-sm"
               placeholder="Type your message..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -146,7 +204,7 @@ export default function Home() {
             </button>
           </div>
           <div className="mt-2 text-center">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-medium">
+            <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">
               IIIT Raichur Official Chatbot
             </p>
           </div>
