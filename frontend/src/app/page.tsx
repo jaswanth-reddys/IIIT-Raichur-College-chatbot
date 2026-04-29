@@ -81,30 +81,26 @@ export default function Home() {
       {/* Floating Chat Bubble */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 rounded-full shadow-2xl flex items-center justify-center text-white hover:bg-blue-700 transition-all duration-300 z-50 transform hover:scale-110 active:scale-95"
+        className={`fixed bottom-6 right-6 w-16 h-16 bg-blue-600 rounded-full shadow-2xl flex items-center justify-center text-white hover:bg-blue-700 transition-all duration-300 z-50 transform hover:scale-110 active:scale-95 ${
+          isOpen ? "scale-0 opacity-0 pointer-events-none" : "scale-100 opacity-100"
+        }`}
       >
-        {isOpen ? (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-          </svg>
-        )}
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
       </button>
 
       {/* Chat Window */}
       <div
-        className={`fixed bottom-24 right-6 w-[90vw] md:w-[400px] h-[600px] max-h-[80vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right z-50 border border-blue-100 ${
+        className={`fixed bottom-6 right-6 w-[85vw] md:w-[320px] h-[400px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right z-50 border border-blue-100 ${
           isOpen ? "scale-100 opacity-100" : "scale-0 opacity-0 pointer-events-none"
         }`}
       >
         {/* Header */}
         <header className="bg-white p-4 flex items-center justify-between border-b border-blue-50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-              IR
+            <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center border border-blue-50">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h2 className="text-zinc-800 font-semibold">IIITR Bot</h2>
@@ -115,8 +111,8 @@ export default function Home() {
             </div>
           </div>
           
-          {/* Faculty Upload Button */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-1">
+            {/* Faculty Upload Button */}
             <input
               type="file"
               ref={fileInputRef}
@@ -138,6 +134,17 @@ export default function Home() {
                 </svg>
               )}
             </button>
+
+            {/* Close Button */}
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+              title="Close Chat"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </header>
 
@@ -145,7 +152,7 @@ export default function Home() {
         <main className="flex-1 overflow-y-auto p-4 space-y-4 bg-white scrollbar-thin scrollbar-thumb-blue-100 scrollbar-track-transparent">
           {messages.length === 0 && (
             <div className="text-center py-10">
-              <p className="text-zinc-400 text-sm font-medium">Hello! How can I help you today?</p>
+              <p className="text-zinc-400 text-xs font-medium">Hello! How can I help you today?</p>
             </div>
           )}
           {messages.map((msg, index) => (
@@ -154,14 +161,14 @@ export default function Home() {
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[85%] p-3 rounded-2xl ${
+                className={`max-w-[85%] p-3 rounded-2xl text-xs ${
                   msg.role === "user"
                     ? "bg-blue-600 text-white rounded-tr-none shadow-md"
                     : "bg-blue-50 text-zinc-800 rounded-tl-none border border-blue-100"
                 }`}
               >
                 {msg.role === "bot" ? (
-                  <div className="prose prose-sm max-w-none prose-zinc">
+                  <div className="prose prose-xs max-w-none prose-zinc">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                   </div>
                 ) : (
@@ -172,7 +179,7 @@ export default function Home() {
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-blue-50 p-3 rounded-2xl rounded-tl-none border border-blue-100 text-blue-400 text-sm flex gap-1">
+              <div className="bg-blue-50 p-3 rounded-2xl rounded-tl-none border border-blue-100 text-blue-400 text-xs flex gap-1">
                 <span className="animate-bounce">.</span>
                 <span className="animate-bounce delay-100">.</span>
                 <span className="animate-bounce delay-200">.</span>
@@ -187,7 +194,7 @@ export default function Home() {
           <div className="relative flex items-center">
             <input
               type="text"
-              className="flex-1 p-3 pr-12 bg-white border border-blue-100 rounded-2xl text-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-zinc-400 shadow-sm"
+              className="flex-1 p-3 pr-12 bg-white border border-blue-100 rounded-2xl text-zinc-800 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-zinc-400 shadow-sm"
               placeholder="Type your message..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -202,11 +209,6 @@ export default function Home() {
                 <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
               </svg>
             </button>
-          </div>
-          <div className="mt-2 text-center">
-            <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">
-              IIIT Raichur Official Chatbot
-            </p>
           </div>
         </footer>
       </div>
