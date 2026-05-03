@@ -4,7 +4,6 @@ import requests
 import chromadb
 from chromadb.config import Settings
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -17,18 +16,8 @@ class IIITRChatbot:
         self.doc_url = doc_url
         self.chat_history = [] # To store conversation history
         
-        # OpenRouter client for Gemini Flash 1.5 Free
-        api_key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY")
-        
-        if not api_key:
-            print("WARNING: No API key found for OpenAI/OpenRouter client. Set OPENROUTER_API_KEY or OPENAI_API_KEY.")
-            api_key = "MISSING_KEY" # Placeholder to avoid crash at init, will fail on use
-
-        self.client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key,
-        )
-        self.model_name = os.environ.get("CHATBOT_MODEL", "openai/gpt-oss-120b")
+        # Initialize Gemini model
+        self.model = genai.GenerativeModel("gemini-3-flash-preview")
         
         # Initialize ChromaDB
         self.chroma_client = chromadb.PersistentClient(path="./chroma_db")
@@ -135,11 +124,8 @@ QUESTION:
 """
         
         try:
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            answer = response.choices[0].message.content
+            response = self.model.generate_content(prompt)
+            answer = response.text
             
             # Update history
             self.chat_history.append({"role": "user", "content": question})
