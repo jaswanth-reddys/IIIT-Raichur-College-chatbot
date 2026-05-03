@@ -17,7 +17,7 @@ class IIITRChatbot:
         self.chat_history = [] # To store conversation history
         
         # Initialize Gemini model
-        self.model = genai.GenerativeModel("gemini-3-flash-preview")
+        self.model = genai.GenerativeModel("gemini-1.5-flash")
         
         # Initialize ChromaDB
         self.chroma_client = chromadb.PersistentClient(path="./chroma_db")
