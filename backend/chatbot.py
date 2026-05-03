@@ -18,9 +18,15 @@ class IIITRChatbot:
         self.chat_history = [] # To store conversation history
         
         # OpenRouter client for Gemini Flash 1.5 Free
+        api_key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        
+        if not api_key:
+            print("WARNING: No API key found for OpenAI/OpenRouter client. Set OPENROUTER_API_KEY or OPENAI_API_KEY.")
+            api_key = "MISSING_KEY" # Placeholder to avoid crash at init, will fail on use
+
         self.client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
-            api_key=os.environ.get("OPENROUTER_API_KEY"),
+            api_key=api_key,
         )
         self.model_name = "openai/gpt-oss-120b"
         
