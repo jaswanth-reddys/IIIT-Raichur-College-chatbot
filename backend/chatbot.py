@@ -4,17 +4,25 @@ import requests
 import chromadb
 from chromadb.config import Settings
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
+# Native Google AI for embeddings
 genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
 
 class IIITRChatbot:
     def __init__(self, knowledge_base_text="", doc_url=None):
         self.knowledge_base_text = knowledge_base_text
         self.doc_url = doc_url
-        self.model = genai.GenerativeModel("gemini-3-flash-preview")
         self.chat_history = [] # To store conversation history
+        
+        # OpenRouter client for Gemini Flash 1.5 Free
+        self.client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=os.environ.get("OPENROUTER_API_KEY"),
+        )
+        self.model_name = "openai/gpt-oss-120b"
         
         # Initialize ChromaDB
         self.chroma_client = chromadb.PersistentClient(path="./chroma_db")
@@ -89,28 +97,43 @@ class IIITRChatbot:
         # Format chat history for the prompt
         history_context = "\n".join([f"{item['role']}: {item['content']}" for item in self.chat_history[-6:]])
 
-        prompt = f"""
-        You are an official chatbot for IIITR (Indian Institute of Information Technology, Raichur).
-        Answer the following question based on the knowledge base provided below.
-        
-        Rules for response length:
-        1. If this is the FIRST time the user is asking about this specific topic or person in this conversation, provide a VERY SHORT and relevant answer (max 2 sentences).
-        2. If the user is asking a follow-up question, or asking for more details about something already mentioned in the conversation history, provide a DETAILED and IN-DEPTH answer.
-        
-        If the information is not present in the knowledge base, say you don't know but suggest visiting the official website.
-        
-        Conversation History:
-        {history_context}
-        
-        Question: {question}
-        
-        Knowledge Base:
-        {full_kb}
-        """
+        prompt = f"""You are an AI assistant for IIIT Raichur.
+-------------------------
+RESPONSE RULES
+-------------------------
+1. Always answer based ONLY on the knowledge base.
+   If not found, say:
+   "I'm not sure. Please check the official IIIT Raichur website."
+2. Keep answers SHORT and DIRECT by default (1–3 sentences).
+3. Only give a DETAILED answer IF:
+   - The user explicitly asks for more details
+   - The question requires explanation (e.g., "explain", "why", "how")
+4. Do NOT assume a question is a follow-up unless the user clearly refers to previous context.
+5. Do NOT repeat full information if already answered.
+   - Provide only the missing or requested part.
+6. For identity/contact questions:
+   - Give ONLY the exact answer (name/role).
+   - Do NOT include full biography unless asked.
+7. Avoid unnecessary elaboration.
+-------------------------
+CONTEXT
+-------------------------
+Conversation History:
+{history_context}
+
+Knowledge Base:
+{full_kb}
+-------------------------
+QUESTION:
+{question}
+"""
         
         try:
-            response = self.model.generate_content(prompt)
-            answer = response.text
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            answer = response.choices[0].message.content
             
             # Update history
             self.chat_history.append({"role": "user", "content": question})

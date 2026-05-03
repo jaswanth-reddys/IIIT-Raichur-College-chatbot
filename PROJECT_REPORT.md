@@ -57,3 +57,11 @@ The frontend is built with **Next.js** and **Tailwind CSS**, featuring:
 
 ## 6. Conclusion
 The IIITR Intelligent Campus Chatbot represents a significant step toward a more connected and informed campus. By leveraging RAG and automated scraping, the system ensures that information is always accurate and easily accessible. The modular nature of the backend allows for future expansions, such as voice integration or multi-language support.
+
+
+1. Where it is stored
+The data is stored in three different ways:
+
+Website Content: When the server starts, it scrapes the IIITR website and stores all the text in an in-memory variable called knowledge_text in main.py.
+Faculty Uploads (PDF/Excel/JSON): These are processed and stored in a Vector Database (ChromaDB) located in the ./chroma_db directory. This allows for semantic search based on the user's question.
+Real-time Admin Data: Stored in a Google Doc. The bot fetches the latest text from this document for every single query to ensure it has the most up-to-date information.
