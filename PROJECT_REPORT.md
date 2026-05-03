@@ -51,7 +51,7 @@ The frontend is built with **Next.js** and **Tailwind CSS**, featuring:
 ## 5. Technical Stack
 - **Frontend**: Next.js, React, Tailwind CSS, Lucide Icons.
 - **Backend**: FastAPI, Python, Uvicorn.
-- **AI Models**: Google Gemini 1.5 Flash (Generation), Gemini Embedding 001.
+- **AI Models**: openai/gpt-oss-120b (Generation), Gemini Embedding 001.
 - **Database**: ChromaDB (Vector Store).
 - **Tools**: BeautifulSoup (Scraping), PyPDF (PDF Parsing), Pandas (Excel Processing).
 

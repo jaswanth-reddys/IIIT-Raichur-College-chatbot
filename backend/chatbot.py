@@ -28,7 +28,7 @@ class IIITRChatbot:
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key,
         )
-        self.model_name = "openai/gpt-oss-120b"
+        self.model_name = os.environ.get("CHATBOT_MODEL", "openai/gpt-oss-120b")
         
         # Initialize ChromaDB
         self.chroma_client = chromadb.PersistentClient(path="./chroma_db")
