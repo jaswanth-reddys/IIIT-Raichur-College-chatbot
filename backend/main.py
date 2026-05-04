@@ -18,20 +18,11 @@ app = FastAPI()
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
-    allow_credentials=False,
+    allow_origins=["*"], # In production, specify the actual frontend URL
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"]
 )
-
-@app.get("/health")
-def health_check():
-    return {
-        "status": "healthy",
-        "keys_configured": len(chatbot.api_keys),
-        "vector_db": "initialized"
-    }
 
 # Global variables for knowledge base and bot
 GOOGLE_DOC_URL = "https://docs.google.com/document/d/1ww3W8lzFRdnAHpzcXT7CVCouIuB9LtNIcKiBdiGv4_Y/edit?usp=sharing"
@@ -40,11 +31,10 @@ scraper = IIITRScraper()
 knowledge_text = "IIIT Raichur is a premier technical institute in Karnataka, India."
 chatbot = IIITRChatbot(knowledge_base_text=knowledge_text, doc_url=GOOGLE_DOC_URL)
 
-import threading
-
-def run_initial_scrape():
+@app.on_event("startup")
+def startup_event():
     global knowledge_text, chatbot
-    print("Performing initial scrape in background...")
+    print("Performing initial scrape...")
     try:
         scraper.scrape("https://iiitr.ac.in", depth=2)
         knowledge_text = scraper.get_combined_text()
@@ -52,12 +42,6 @@ def run_initial_scrape():
         print("Initial scrape complete.")
     except Exception as e:
         print(f"Startup scrape failed: {e}")
-
-@app.on_event("startup")
-def startup_event():
-    # Run scraping in a separate thread to avoid blocking startup (important for Render/Cloud)
-    thread = threading.Thread(target=run_initial_scrape)
-    thread.start()
 
 class QuestionRequest(BaseModel):
     question: str
