@@ -31,10 +31,11 @@ scraper = IIITRScraper()
 knowledge_text = "IIIT Raichur is a premier technical institute in Karnataka, India."
 chatbot = IIITRChatbot(knowledge_base_text=knowledge_text, doc_url=GOOGLE_DOC_URL)
 
-@app.on_event("startup")
-def startup_event():
+import threading
+
+def run_initial_scrape():
     global knowledge_text, chatbot
-    print("Performing initial scrape...")
+    print("Performing initial scrape in background...")
     try:
         scraper.scrape("https://iiitr.ac.in", depth=2)
         knowledge_text = scraper.get_combined_text()
@@ -42,6 +43,12 @@ def startup_event():
         print("Initial scrape complete.")
     except Exception as e:
         print(f"Startup scrape failed: {e}")
+
+@app.on_event("startup")
+def startup_event():
+    # Run scraping in a separate thread to avoid blocking startup (important for Render/Cloud)
+    thread = threading.Thread(target=run_initial_scrape)
+    thread.start()
 
 class QuestionRequest(BaseModel):
     question: str
