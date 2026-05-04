@@ -30,7 +30,7 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/ask`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://iiit-raichur-college-chatbot.onrender.com'}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: input }),
@@ -56,7 +56,7 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/upload-faculty-data`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://iiit-raichur-college-chatbot.onrender.com'}/upload-faculty-data`, {
         method: "POST",
         body: formData,
       });
