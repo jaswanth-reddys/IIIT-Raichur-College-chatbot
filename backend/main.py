@@ -18,11 +18,20 @@ app = FastAPI()
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, specify the actual frontend URL
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "keys_configured": len(chatbot.api_keys),
+        "vector_db": "initialized"
+    }
 
 # Global variables for knowledge base and bot
 GOOGLE_DOC_URL = "https://docs.google.com/document/d/1ww3W8lzFRdnAHpzcXT7CVCouIuB9LtNIcKiBdiGv4_Y/edit?usp=sharing"

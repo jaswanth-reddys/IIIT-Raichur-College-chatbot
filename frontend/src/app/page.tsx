@@ -29,19 +29,29 @@ export default function Home() {
     setInput("");
     setIsLoading(true);
 
+    const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://iiit-raichur-college-chatbot.onrender.com').replace(/\/$/, '');
+    
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://iiit-raichur-college-chatbot.onrender.com'}/ask`, {
+      const response = await fetch(`${baseUrl}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: input }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+        throw new Error(errorData.detail || `Server error: ${response.status}`);
+      }
+
       const data = await response.json();
       const botMessage = { role: "bot", content: data.answer };
       setMessages((prev) => [...prev, botMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error:", error);
-      setMessages((prev) => [...prev, { role: "bot", content: "Sorry, something went wrong. Make sure the backend is running." }]);
+      setMessages((prev) => [...prev, { 
+        role: "bot", 
+        content: `⚠️ Connection Error: ${error.message || "Make sure the backend is running."}` 
+      }]);
     } finally {
       setIsLoading(false);
     }
@@ -55,8 +65,10 @@ export default function Home() {
     const formData = new FormData();
     formData.append("file", file);
 
+    const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://iiit-raichur-college-chatbot.onrender.com').replace(/\/$/, '');
+
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://iiit-raichur-college-chatbot.onrender.com'}/upload-faculty-data`, {
+      const response = await fetch(`${baseUrl}/upload-faculty-data`, {
         method: "POST",
         body: formData,
       });
@@ -65,11 +77,11 @@ export default function Home() {
       if (response.ok) {
         setMessages((prev) => [...prev, { role: "bot", content: `✅ ${data.message}` }]);
       } else {
-        setMessages((prev) => [...prev, { role: "bot", content: `❌ Upload failed: ${data.detail}` }]);
+        setMessages((prev) => [...prev, { role: "bot", content: `❌ Upload failed: ${data.detail || response.statusText}` }]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Upload error:", error);
-      setMessages((prev) => [...prev, { role: "bot", content: "❌ Error connecting to server for upload." }]);
+      setMessages((prev) => [...prev, { role: "bot", content: `❌ Error connecting to server: ${error.message}` }]);
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
